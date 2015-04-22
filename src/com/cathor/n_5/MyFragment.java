@@ -1,16 +1,22 @@
 package com.cathor.n_5;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.SQLData;
 import java.util.ArrayList;
-
-import com.cathor.n_5.R.layout;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
+import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteCantOpenDatabaseException;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.media.MediaPlayer;
-import android.net.rtp.AudioCodec;
 import android.os.Bundle;
 import android.provider.MediaStore.Audio.Media;
 import android.view.LayoutInflater;
@@ -18,7 +24,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -31,8 +36,9 @@ public class MyFragment extends Fragment{
 	public static ArrayList<Music> array;
 	public static int nowPlay = -1;
 	public static MediaPlayer player;
-	public static int height = 53;
+	public static int height = 55;
 	public static ImageView previous;
+	private SQLiteDatabase db;
 	class Music{
 		String title;
 		String author;
@@ -51,7 +57,122 @@ public class MyFragment extends Fragment{
 		return (int)(dp * MainActivity.scale + 0.5f);
 	}
 	
-	@Override
+	private ArrayList<MyFragment.Music> loadFromDatabase(SQLiteDatabase db){
+		ArrayList<MyFragment.Music> array = new ArrayList<MyFragment.Music>();
+		Cursor cursor = db.query("music_info", new String[]{"title", "author", "path"}, null, null, null, null, null);
+		cursor.moveToFirst();
+		Music music = new Music(cursor.getString(cursor.getColumnIndex("title")), cursor.getString(cursor.getColumnIndex("author")), cursor.getString(cursor.getColumnIndex("path")));
+		array.add(music);
+		while(cursor.moveToNext()){
+			music = new Music(cursor.getString(cursor.getColumnIndex("title")), cursor.getString(cursor.getColumnIndex("author")), cursor.getString(cursor.getColumnIndex("path")));
+			array.add(music);
+		}
+		return array;
+	}
+	
+	private ArrayList<MyFragment.Music> loadFromSystem(ArrayList<MyFragment.Music> array, LayoutInflater inflater, int kb, SQLiteDatabase db) throws FileNotFoundException{
+		try{
+			db.execSQL("create table music_info(_id integer primary key autoincrement, title, author, path)");
+		}
+		catch(SQLiteException e){
+			db.execSQL("drop table music_info");
+			db.execSQL("create table music_info(_id integer primary key autoincrement, title, author, path)");
+		}
+		CursorLoader cl = new CursorLoader(inflater.getContext(), Media.EXTERNAL_CONTENT_URI, new String[]{Media.DATA, Media.ARTIST, Media.TITLE}, null, null, null);
+		Cursor cursor = cl.loadInBackground();
+		cursor.moveToFirst();
+		Music music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)));
+		ContentValues content;
+		if(kb != 0){
+			File in = new File(music.path);
+			if(in.length() >= kb * 1024L * 8){
+				array.add(music);
+				content = new ContentValues();
+				content.put("title", music.title);
+				content.put("author", music.author);
+				content.put("path", music.path);
+				db.insert("music_info", null, content);
+			}
+			while(cursor.moveToNext()){
+				music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)));
+				in = new File(music.path);
+				if(in.length() >= kb * 1024L * 8){
+					array.add(music);
+					content = new ContentValues();
+					content.put("title", music.title);
+					content.put("author", music.author);
+					content.put("path", music.path);
+					db.insert("music_info", null, content);
+				}
+			}
+		}
+		else{
+			array.add(music);
+			content = new ContentValues();
+			content.put("title", music.title);
+			content.put("author", music.author);
+			content.put("path", music.path);
+			db.insert("music_info", null, content);
+			while(cursor.moveToNext()){
+				music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)));
+				array.add(music);
+				content = new ContentValues();
+				content.put("title", music.title);
+				content.put("author", music.author);
+				content.put("path", music.path);
+				db.insert("music_info", null, content);
+			}
+		}
+		cursor.close();
+		CursorLoader cl2 = new CursorLoader(inflater.getContext(), Media.INTERNAL_CONTENT_URI, new String[]{Media.DATA, Media.ARTIST, Media.TITLE}, null, null, null);
+		Cursor cursor2 = cl2.loadInBackground();
+		cursor2.moveToFirst();
+		music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)));
+		if(kb != 0){
+			File in = new File(music.path);
+			if(in.length() >= kb * 1024L * 8){
+				array.add(music);
+				content = new ContentValues();
+				content.put("title", music.title);
+				content.put("author", music.author);
+				content.put("path", music.path);
+				db.insert("music_info", null, content);
+			}
+			while(cursor2.moveToNext()){
+				music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)));
+				in = new File(music.path);
+				if(in.length() >= kb * 1024L * 8){
+					array.add(music);
+					content = new ContentValues();
+					content.put("title", music.title);
+					content.put("author", music.author);
+					content.put("path", music.path);
+					db.insert("music_info", null, content);
+				}
+			}
+		}
+		else{
+			array.add(music);
+			content = new ContentValues();
+			content.put("title", music.title);
+			content.put("author", music.author);
+			content.put("path", music.path);
+			db.insert("music_info", null, content);
+			while(cursor2.moveToNext()){
+				music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)));
+				array.add(music);
+				content = new ContentValues();
+				content.put("title", music.title);
+				content.put("author", music.author);
+				content.put("path", music.path);
+				db.insert("music_info", null, content);
+			}
+		}
+		cursor2.close();
+		return array;
+	}
+	
+	@SuppressLint("SdCardPath") @Override
 	public View onCreateView(final LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
@@ -65,25 +186,27 @@ public class MyFragment extends Fragment{
 		scroll.addView(re);
 		re.addView(list);
 		System.out.println("Create cursor");
-		CursorLoader cl = new CursorLoader(inflater.getContext(), Media.EXTERNAL_CONTENT_URI, new String[]{Media.DATA, Media.ARTIST, Media.TITLE}, null, null, null);
-		Cursor cursor = cl.loadInBackground();
-		cursor.moveToFirst();
-		Music music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)));
 		array = new ArrayList<MyFragment.Music>();
-		array.add(music);
-		while(cursor.moveToNext()){
-			music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)));
-			array.add(music);
+		try{
+			db = SQLiteDatabase.openDatabase(inflater.getContext().getFilesDir() + "/musicdata/data.db3",  null, SQLiteDatabase.OPEN_READWRITE);
+			array = loadFromDatabase(db);
 		}
-		CursorLoader cl2 = new CursorLoader(inflater.getContext(), Media.INTERNAL_CONTENT_URI, new String[]{Media.DATA, Media.ARTIST, Media.TITLE}, null, null, null);
-		Cursor cursor2 = cl2.loadInBackground();
-		cursor2.moveToFirst();
-		music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)));
-		array.add(music);
-		while(cursor2.moveToNext()){
-			music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)));
-			array.add(music);
+		catch(SQLiteCantOpenDatabaseException e){
+			try {
+				File f = new File(inflater.getContext().getFilesDir() + "/musicdata/");
+				if(!f.exists()){
+					f.mkdirs();
+					System.out.println("directory--------->" + f.isDirectory());
+					System.out.println("result--------->" + f.exists());
+				}
+				db = SQLiteDatabase.openOrCreateDatabase(f.getPath() + "/data.db3", null);
+				array = loadFromSystem(array, inflater, 500, db);
+			} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
+		
 		System.out.println("get " + array.size() + " music");
 		Toast.makeText(inflater.getContext(), "获取了" + array.size() + "首歌曲", Toast.LENGTH_LONG).show();
 		list.setClickable(false);
@@ -199,8 +322,9 @@ public class MyFragment extends Fragment{
 				return array.size();
 			}
 		});
+		list.setDividerHeight(getPx(1));
 		list.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getPx(height * array.size())));
-		re.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, getPx(height * array.size())));
+		re.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, getPx(height)* array.size()));
 		return scroll;
 	}
 	public static void playover(){

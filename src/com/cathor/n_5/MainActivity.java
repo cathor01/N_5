@@ -74,10 +74,16 @@ public class MainActivity extends Activity {
 			@Override
 			public boolean onLongClick(View v) {
 				// TODO Auto-generated method stub
-				FragmentTransaction ft = fm.beginTransaction();
-				ft.replace(android.R.id.content, fragment, "frag");
-				ft.commit();
-				va.start();
+				new Thread(new Runnable() {
+					
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						FragmentTransaction ft = fm.beginTransaction();
+						ft.replace(android.R.id.content, fragment, "frag");
+						ft.commit();
+					}
+				}).start();
 				return false;
 			}
 		});
