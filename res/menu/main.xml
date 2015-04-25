@@ -3,9 +3,21 @@
     tools:context="com.cathor.n_5.MainActivity" >
 
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/click"
+        android:orderInCategory="10"
+        android:showAsAction="ifRoom"
+        android:icon="@drawable/fade"
+        android:title="Click Me!"/>
+    <item
+        android:id="@+id/select"
         android:orderInCategory="100"
-        android:showAsAction="never"
-        android:title="@string/action_settings"/>
-
+        android:showAsAction="always"
+        android:icon="@drawable/choose"
+        android:title="Select!"/>
+	<item
+        android:id="@+id/change"
+        android:orderInCategory="50"
+        android:showAsAction="always"
+        android:icon="@drawable/click"
+        android:title="Music!"/>
 </menu>

@@ -1,100 +1,184 @@
 package com.cathor.n_5;
 
 import java.io.File;
+
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
-import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.provider.MediaStore;
-import android.provider.MediaStore.Audio.Media;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.Toolbar;
+import android.support.v7.widget.Toolbar.OnMenuItemClickListener;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
 import android.widget.RelativeLayout;
+import android.widget.RemoteViews;
 import android.widget.Toast;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends ActionBarActivity {
 	String filePath;
+	private static int counter = 1;
+	public static NotificationManager nm;
 	private final static int FILE_SELECT = 101;
-	public static MediaPlayer media;
 	public static float scale;
+	private static Intent service;
+	private static ValueAnimator va;
+	private static RemoteViews remote;
+	private static FragmentManager fm;
+	private static MyFragment fragment;
+	private static Controller control;
+	private static Notification notifi;
+	public static void updateNoti(int flag){
+		if(MyService.getNowPlay() != -1){
+			remote.setTextViewText(R.id.ntitle,MyService.getItemAt(MyService.getNowPlay()).title);
+			if(flag == 1){
+				remote.setImageViewResource(R.id.npause,R.drawable.pause);
+				nm.notify(111, notifi);
+			}
+			else if(flag == 2){
+				remote.setImageViewResource(R.id.npause, R.drawable.play);
+				nm.cancel(111);
+			}
+			
+		}
+	}
+	
+	private void registerHeadsetPlugReceiver() {    
+        IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);    
+        registerReceiver(headsetPlugReceiver, intentFilter);   
+    }  
+      
+    private BroadcastReceiver headsetPlugReceiver = new BroadcastReceiver() {  
+  
+        @Override  
+        public void onReceive(Context context, Intent intent) {  
+            String action = intent.getAction();  
+            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(action)) {  
+                MyFragment.pauseMusic();  
+            }  
+        }  
+    };  
+    
+    ServiceConnection conn = new ServiceConnection() {
+		
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			// TODO Auto-generated method stub
+			bindService(service, conn, BIND_AUTO_CREATE);
+		}
+		
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			// TODO Auto-generated method stub
+			
+		}
+	};
+	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
     	//getActionBar().hide();
     	scale = MainActivity.this.getResources().getDisplayMetrics().density;
-    	media = new MediaPlayer();
-    	media.setOnCompletionListener(new OnCompletionListener() {
-			
-			@Override
-			public void onCompletion(MediaPlayer mp) {
-				// TODO Auto-generated method stub
-				MyFragment.playover();
-			}
-		});
-    	final FragmentManager fm = getFragmentManager();
-    	final MyFragment fragment = new MyFragment();
-    	final ValueAnimator va = ValueAnimator.ofFloat(0f, 1f);
+    	service = new Intent(this, MyService.class);
+    	startService(service);
+    	fm = getFragmentManager();
+    	if(fragment == null){
+    		fragment = new MyFragment();
+    	}
+    	nm = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+    	va = ValueAnimator.ofFloat(0f, 1f);
         va.setDuration(1000);
     	getWindow().setBackgroundDrawableResource(R.drawable.bg);
         super.onCreate(savedInstanceState);
         LayoutInflater inflater = this.getLayoutInflater();
         final RelativeLayout main = (RelativeLayout)inflater.inflate(R.layout.activity_main, null);
-        final Button button = (Button)main.findViewById(R.id.button);
-        final Button button2 = (Button)main.findViewById(R.id.select);
-        button2.setOnClickListener(new View.OnClickListener() {
+        Toolbar toolbar = (Toolbar)main.findViewById(R.id.tool);
+        toolbar.setTitle("N_5");
+        toolbar.setSubtitle("music player");
+        toolbar.setBackgroundColor(0xff66ccff);
+        toolbar.setTitleTextColor(0xffffffff);
+        toolbar.setSubtitleTextColor(0xffffffff);
+        toolbar.setLogo(R.drawable.ic_launcher);
+        setSupportActionBar(toolbar);
+        notifi = new Notification(R.drawable.ic_launcher, "开始音乐", System.currentTimeMillis());
+    	notifi.flags = Notification.FLAG_NO_CLEAR;
+    	RelativeLayout notiV = (RelativeLayout)inflater.inflate(R.layout.notification, null);
+    	registerHeadsetPlugReceiver();
+        remote =  new RemoteViews(getPackageName(), R.layout.notification);
+    	notifi.contentView = remote;
+    	remote.setTextViewText(R.id.ntitle, "No Media");
+    	remote.setImageViewResource(R.id.npause, R.drawable.play);
+    	nm.notify(111, notifi);
+        toolbar.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			
 			@Override
-			public void onClick(View v) {
+			public boolean onMenuItemClick(MenuItem item) {
 				// TODO Auto-generated method stub
-				Intent tIntent = new Intent(Intent.ACTION_GET_CONTENT);
-				tIntent.setType("image/*");
-				tIntent.addCategory(Intent.CATEGORY_OPENABLE);
-				try{
-					startActivityForResult(Intent.createChooser(tIntent, "选择一个应用"), FILE_SELECT);
-				}catch(android.content.ActivityNotFoundException ex){
-					Toast.makeText(MainActivity.this, "请安装一个选择器", Toast.LENGTH_SHORT).show();
-				}
-			}
-		});
-        button.setOnLongClickListener(new View.OnLongClickListener() {
-			
-			@Override
-			public boolean onLongClick(View v) {
-				// TODO Auto-generated method stub
-				new Thread(new Runnable() {
-					
-					@Override
-					public void run() {
-						// TODO Auto-generated method stub
-						FragmentTransaction ft = fm.beginTransaction();
-						ft.replace(android.R.id.content, fragment, "frag");
-						ft.commit();
+				int id = item.getItemId();
+		        switch(id){
+		        case R.id.click: 
+		        	va.start();
+		        	return false;
+		        case R.id.select:
+		        	Intent tIntent = new Intent(Intent.ACTION_GET_CONTENT);
+					tIntent.setType("image/*");
+					tIntent.addCategory(Intent.CATEGORY_OPENABLE);
+					try{
+						startActivityForResult(Intent.createChooser(tIntent, "选择一个应用"), FILE_SELECT);
+					}catch(android.content.ActivityNotFoundException ex){
+						Toast.makeText(MainActivity.this, "请安装一个选择器", Toast.LENGTH_SHORT).show();
 					}
-				}).start();
+					return false;
+		        case R.id.change:
+		        	
+		        	
+		        	new Thread(new Runnable() {
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							FragmentTransaction ft = fm.beginTransaction();
+							android.app.Fragment f = fm.findFragmentByTag("frag");
+							if(f != null){
+								ft.remove(f);
+							}
+							ft.replace(R.id.frag, fragment, "frag");
+							ft.commit();
+						}
+					}).start();
+		        	return false;
+		        }
 				return false;
 			}
 		});
-        button.setOnClickListener(new View.OnClickListener() {
-			
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				va.start();
-			}
-		});
+        if(control == null){
+        	control = new Controller();
+        	FragmentTransaction ftt = fm.beginTransaction();
+        	android.app.Fragment f = fm.findFragmentByTag("cont");
+        	if(f != null){
+        		ftt.remove(f);
+        	}
+            ftt.replace(R.id.controller, control, "cont");
+            ftt.commit();
+        }
         AnimatorUpdateListener listener = new AnimatorUpdateListener() {
 			
 			@Override
@@ -122,6 +206,15 @@ public class MainActivity extends Activity {
 			}
 		}
 	}
+    
+
+
+	@Override
+	protected void onRestart() {
+		// TODO Auto-generated method stub
+		//fm.beginTransaction().replace(R.id.controller, new Controller(counter++ + ""));
+		super.onRestart();
+	}
 
 
 	@Override
@@ -130,16 +223,13 @@ public class MainActivity extends Activity {
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
-
+	
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
         return super.onOptionsItemSelected(item);
     }
     public static class FileUtils {

@@ -1,22 +1,19 @@
 package com.cathor.n_5;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.sql.SQLData;
 import java.util.ArrayList;
+import java.util.Random;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.content.ContentValues;
 import android.content.CursorLoader;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteCantOpenDatabaseException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.provider.MediaStore.Audio.Media;
 import android.view.LayoutInflater;
@@ -33,12 +30,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class MyFragment extends Fragment{
-	public static ArrayList<Music> array;
-	public static int nowPlay = -1;
-	public static MediaPlayer player;
 	public static int height = 55;
 	public static ImageView previous;
 	private SQLiteDatabase db;
+	private static LayoutInflater inflater;
+	private static BaseAdapter adapter;
+	public static ListView list;
+	public static int change = 0;
+	private static Intent intent;
 	class Music{
 		String title;
 		String author;
@@ -50,7 +49,11 @@ public class MyFragment extends Fragment{
 		}
 	}
 	
-	
+	private static void handleMeg(String name, String value){
+		intent = new Intent(inflater.getContext(), MyService.class);
+		intent.putExtra(name, value);
+		inflater.getContext().startService(intent);
+	}
 	
 	private int getPx(int dp) {
 		// TODO Auto-generated method stub
@@ -70,7 +73,8 @@ public class MyFragment extends Fragment{
 		return array;
 	}
 	
-	private ArrayList<MyFragment.Music> loadFromSystem(ArrayList<MyFragment.Music> array, LayoutInflater inflater, int kb, SQLiteDatabase db) throws FileNotFoundException{
+	private ArrayList<MyFragment.Music> loadFromSystem(ArrayList<MyFragment.Music> array, LayoutInflater inflate, int kb, SQLiteDatabase db) throws FileNotFoundException{
+		inflater = inflate;
 		try{
 			db.execSQL("create table music_info(_id integer primary key autoincrement, title, author, path)");
 		}
@@ -173,20 +177,18 @@ public class MyFragment extends Fragment{
 	}
 	
 	@SuppressLint("SdCardPath") @Override
-	public View onCreateView(final LayoutInflater inflater, ViewGroup container,
+	public View onCreateView(final LayoutInflater inflate, ViewGroup container,
 			Bundle savedInstanceState) {
+		inflater = inflate;
 		// TODO Auto-generated method stub
-		
 		System.out.println("create MediaPlayer");
-		player = MainActivity.media;
-		System.out.println(player == null);
 		ScrollView scroll = new ScrollView(inflater.getContext());
 		RelativeLayout re = new RelativeLayout(inflater.getContext());
-		ListView list = new ListView(inflater.getContext());
+		list = new ListView(inflater.getContext());
 		scroll.addView(re);
 		re.addView(list);
 		System.out.println("Create cursor");
-		array = new ArrayList<MyFragment.Music>();
+		ArrayList<Music> array = new ArrayList<MyFragment.Music>();
 		try{
 			db = SQLiteDatabase.openDatabase(inflater.getContext().getFilesDir() + "/musicdata/data.db3",  null, SQLiteDatabase.OPEN_READWRITE);
 			array = loadFromDatabase(db);
@@ -206,23 +208,24 @@ public class MyFragment extends Fragment{
 				e1.printStackTrace();
 			}
 		}
-		
-		System.out.println("get " + array.size() + " music");
+		MyService.setArray(array);
+		System.out.println("get " + MyService.getLength() + " music");
 		Toast.makeText(inflater.getContext(), "获取了" + array.size() + "首歌曲", Toast.LENGTH_LONG).show();
 		list.setClickable(false);
-		list.setAdapter(new BaseAdapter() {
+		adapter = new BaseAdapter() {
 			
 			@SuppressLint("ViewHolder") @Override
-			public View getView(int position, View convertView, ViewGroup parent) {
+			public View getView(final int position, View convertView, ViewGroup parent) {
 				// TODO Auto-generated method stub
 				RelativeLayout view = (RelativeLayout)inflater.inflate(R.layout.musicadapter, null);
 				view.setClickable(false);
+				view.setId(position + 10000);
 				TextView title = (TextView)view.findViewById(R.id.title);
 				TextView author = (TextView)view.findViewById(R.id.author);
 				ImageView button = (ImageView)view.findViewById(R.id.start_pause);
 				button.setId(position + 100);
-				title.setText(array.get(position).title);
-				author.setText(array.get(position).author);
+				title.setText(MyService.getItemAt(position).title);
+				author.setText(MyService.getItemAt(position).author);
 				button.setClickable(true);
 				final LayoutParams params = button.getLayoutParams(); 
 				button.setOnClickListener(new View.OnClickListener () {
@@ -231,73 +234,45 @@ public class MyFragment extends Fragment{
 					public void onClick(View v) {
 						// TODO Auto-generated method stub
 						ImageView bu = (ImageView)v;
-						if(nowPlay == v.getId() - 100){
-							if(player.isPlaying()){
-								player.pause();
+						if(MyService.getNowPlay() == v.getId() - 100){
+							if(MyService.getPlayStatewioutThrow()){
+								MyService.pause();
 								bu.setImageResource(R.drawable.play);
 								bu.setLayoutParams(params);
+								MainActivity.updateNoti(2);
 							}
 							else{
-								player.start();
+								handleMeg(MyService.PLAY,MyService.PLAY_NO_CHANGE);
 								bu.setImageResource(R.drawable.pause);
+								MainActivity.updateNoti(1);
 							}
 						}
-						else if(nowPlay == -1){
-							try {
-								player.setDataSource(array.get(v.getId() - 100).path);
-								player.prepare();
-								player.start();
-								nowPlay = v.getId() - 100;
-								previous = bu;
-								bu.setImageResource(R.drawable.pause);
-							} catch (IllegalArgumentException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							} catch (SecurityException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							} catch (IllegalStateException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							
+						else if(MyService.getNowPlay() == -1){
+							MyService.setNowPlay(v.getId() - 100);
+							handleMeg(MyService.PLAY, MyService.PLAY_CHANGE_RESOURCE);
+							previous = bu;
+							bu.setImageResource(R.drawable.pause);
+							MainActivity.updateNoti(1);
+							change = 1;
 						}
 						else{
 							try{
-								if(player.isPlaying()){
-									player.stop();
+								if(MyService.getPlayStatewioutThrow()){
+									MyService.pause();
 									previous.setImageResource(R.drawable.play);
+									MainActivity.updateNoti(2);
 								}
 							}
 							catch(IllegalStateException e){
 								Toast.makeText(inflater.getContext(), "请等待", Toast.LENGTH_LONG).show();
 								return;
 							}
-							player.reset();
-							try {
-								player.setDataSource(array.get(v.getId() - 100).path);
-								player.prepare();
-								player.start();
-								bu.setImageResource(R.drawable.pause);
-								previous = bu;
-								nowPlay = v.getId() - 100;
-							} catch (IllegalArgumentException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							} catch (SecurityException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							} catch (IllegalStateException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							
+							MyService.setNowPlay(v.getId() - 100);
+							handleMeg(MyService.PLAY, MyService.PLAY_CHANGE_RESOURCE);
+							bu.setImageResource(R.drawable.pause);
+							previous = bu;
+							change = 1;
+							MainActivity.updateNoti(1);
 						}
 					}
 				});
@@ -313,21 +288,76 @@ public class MyFragment extends Fragment{
 			@Override
 			public Object getItem(int position) {
 				// TODO Auto-generated method stub
-				return array.get(position);
+				return MyService.getItemAt(position);
 			}
 			
 			@Override
 			public int getCount() {
 				// TODO Auto-generated method stub
-				return array.size();
+				return MyService.getLength();
 			}
-		});
+		};
+		list.setAdapter(adapter);
 		list.setDividerHeight(getPx(1));
 		list.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getPx(height * array.size())));
 		re.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, getPx(height)* array.size()));
 		return scroll;
 	}
-	public static void playover(){
-		previous.setImageResource(R.drawable.play);
+	public static void test(){
+		ImageView test = (ImageView)list.getChildAt(3 + list.getFirstVisiblePosition()).findViewById(3 + list.getFirstVisiblePosition() + 100);
+		test.setImageResource(R.drawable.pause);
 	}
+	
+	
+	public static void pauseMusic(){
+		if(MyService.getNowPlay() != -1){
+			try{
+				if(MyService.getPlayStatewioutThrow()){
+					System.out.println("path------->1");
+					MyService.pause();
+					previous.setImageResource(R.drawable.play);
+					MainActivity.updateNoti(2);
+					Controller.update();
+				}
+			}
+			catch(IllegalStateException e){
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public static int clickMenu(){
+		try{
+			if(MyService.getPlayStatewioutThrow()){
+				System.out.println("path------->1");
+				MyService.pause();
+				previous.setImageResource(R.drawable.play);
+				MainActivity.updateNoti(2);
+				return 2;
+			}
+			else{
+				System.out.println("path------->2");
+				if(previous != null){
+					handleMeg(MyService.PLAY, MyService.PLAY_NO_CHANGE);
+					previous.setImageResource(R.drawable.pause);
+					MainActivity.updateNoti(1);
+					return 1;
+				}else{
+					return 0;
+				}
+			}
+		}
+		catch(IllegalStateException e){
+			if(MyService.getNowPlay() != -1){
+				System.out.println("path------->3");
+				handleMeg(MyService.PLAY, MyService.PLAY_NO_CHANGE);
+				previous.setImageResource(R.drawable.pause);
+				return 1;
+			}
+			System.out.println("path------->4");
+			return 0;
+		}
+	}
+	
+	
 }

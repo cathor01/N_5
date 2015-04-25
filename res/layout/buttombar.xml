@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="80dp"
+    android:background= "#ff66CCFF"
+    android:elevation="3dp"
+     >
+
+	<RelativeLayout
+	    android:id="@+id/name"
+	    android:layout_width="232dp"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentLeft="true"
+	    android:layout_centerVertical="true"
+	    android:layout_marginLeft="20dp"
+	    android:focusableInTouchMode="true"
+	    android:focusable="true"
+	    android:clickable="true" >
+
+	    <TextView
+	        android:id="@+id/title"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_alignParentTop="true"
+	        android:layout_marginBottom="0dp"
+	        android:text="点击列表播放"
+	        android:singleLine="true"
+	        android:maxWidth="232dp"
+	        android:textColor="#ffffffff"
+	        android:textSize="20sp" />
+
+	    <TextView
+	        android:id="@+id/author"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:singleLine="true"
+	        android:layout_alignLeft="@id/title"
+	        android:layout_below="@id/title"
+	        android:layout_marginLeft="0dp"
+	        android:maxWidth="232dp"
+	        android:layout_marginTop="2dp"
+	        android:textColor="#ffffffff"
+	        android:textSize="14sp" />
+	</RelativeLayout>
+
+	<RelativeLayout
+	    android:id="@+id/name1"
+	    android:layout_width="232dp"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentLeft="true"
+	    android:layout_centerVertical="true"
+	    android:layout_marginLeft="20dp"
+	    android:visibility="invisible"
+	    android:focusableInTouchMode="true"
+	    android:focusable="true"
+	    android:clickable="true" >
+
+	    <TextView
+	        android:id="@+id/title1"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_alignParentTop="true"
+	        android:layout_marginBottom="0dp"
+	        android:singleLine="true"
+	        android:maxWidth="232dp"
+	        android:textColor="#ffffffff"
+	        android:textSize="20sp" />
+
+	    <TextView
+	        android:id="@+id/author1"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignLeft="@id/title1"
+	        android:layout_below="@id/title1"
+	        android:layout_marginLeft="0dp"
+	        android:maxWidth="232dp"
+	        android:singleLine="true"
+	        android:layout_marginTop="2dp"
+	        android:text=""
+	        android:textColor="#ffffffff"
+	        android:textSize="14sp" />
+	</RelativeLayout>
+	
+	<ImageView
+	    android:id="@+id/control"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentRight="true"
+	    android:layout_centerVertical="true"
+	    android:layout_marginRight="20dp"
+	    android:layout_marginLeft="0dp"
+	    android:clickable="true"
+	    android:scaleType="fitXY"
+	    android:scaleX="0.75"
+	    android:scaleY="0.75"
+	    android:src="@drawable/play_w" />
+
+	<ImageView
+	    android:id="@+id/repeat"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_centerVertical="true"
+	    android:layout_marginRight="0dp"
+	    android:scaleType="fitXY"
+	    android:scaleX="0.5"
+	    android:scaleY="0.5"
+	    android:layout_toLeftOf="@id/control"
+	    android:src="@drawable/single" />
+
+</RelativeLayout>
