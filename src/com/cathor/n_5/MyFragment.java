@@ -47,10 +47,17 @@ public class MyFragment extends Fragment{
 		String title;
 		String author;
 		String path;
+		int album_id;
 		Music(String title, String author, String path){
 			this.title = title;
 			this.author = author;
 			this.path = path;
+		}
+		Music(String title, String author, String path, int album){
+			this.title = title;
+			this.author = author;
+			this.path = path;
+			this.album_id = album;
 		}
 	}
 	
@@ -79,12 +86,12 @@ public class MyFragment extends Fragment{
 	
 	private ArrayList<MyFragment.Music> loadFromDatabase(SQLiteDatabase db){
 		ArrayList<MyFragment.Music> array = new ArrayList<MyFragment.Music>();
-		Cursor cursor = db.query("music_info", new String[]{"title", "author", "path"}, null, null, null, null, null);
+		Cursor cursor = db.query("music_info", new String[]{"title", "author", "path", "album_id"}, null, null, null, null, null);
 		cursor.moveToFirst();
-		Music music = new Music(cursor.getString(cursor.getColumnIndex("title")), cursor.getString(cursor.getColumnIndex("author")), cursor.getString(cursor.getColumnIndex("path")));
+		Music music = new Music(cursor.getString(cursor.getColumnIndex("title")), cursor.getString(cursor.getColumnIndex("author")), cursor.getString(cursor.getColumnIndex("path")), cursor.getInt(cursor.getColumnIndex("album_id")));
 		array.add(music);
 		while(cursor.moveToNext()){
-			music = new Music(cursor.getString(cursor.getColumnIndex("title")), cursor.getString(cursor.getColumnIndex("author")), cursor.getString(cursor.getColumnIndex("path")));
+			music = new Music(cursor.getString(cursor.getColumnIndex("title")), cursor.getString(cursor.getColumnIndex("author")), cursor.getString(cursor.getColumnIndex("path")), cursor.getInt(cursor.getColumnIndex("album_id")));
 			array.add(music);
 		}
 		return array;
@@ -102,16 +109,16 @@ public class MyFragment extends Fragment{
 	private static ArrayList<MyFragment.Music> loadFromSystem(ArrayList<MyFragment.Music> array, LayoutInflater inflate, int kb, SQLiteDatabase db) throws FileNotFoundException{
 		inflater = inflate;
 		try{
-			db.execSQL("create table music_info(_id integer primary key autoincrement, title, author, path)");
+			db.execSQL("create table music_info(_id integer primary key autoincrement, title, author, path, album_id integer)");
 		}
 		catch(SQLiteException e){
 			db.execSQL("drop table music_info");
-			db.execSQL("create table music_info(_id integer primary key autoincrement, title, author, path)");
+			db.execSQL("create table music_info(_id integer primary key autoincrement, title, author, path, album_id integer)");
 		}
-		CursorLoader cl = new CursorLoader(inflater.getContext(), Media.EXTERNAL_CONTENT_URI, new String[]{Media.DATA, Media.ARTIST, Media.TITLE}, null, null, null);
+		CursorLoader cl = new CursorLoader(inflater.getContext(), Media.EXTERNAL_CONTENT_URI, new String[]{Media.DATA, Media.ARTIST, Media.TITLE, Media.ALBUM_ID}, null, null, null);
 		Cursor cursor = cl.loadInBackground();
 		cursor.moveToFirst();
-		Music music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)));
+		Music music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)),  cursor.getInt(cursor.getColumnIndex(Media.ALBUM_ID)));
 		ContentValues content;
 		if(kb != 0){
 			File in = new File(music.path);
@@ -121,10 +128,11 @@ public class MyFragment extends Fragment{
 				content.put("title", music.title);
 				content.put("author", music.author);
 				content.put("path", music.path);
+				content.put("album_id", music.album_id);
 				db.insert("music_info", null, content);
 			}
 			while(cursor.moveToNext()){
-				music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)));
+				music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)),  cursor.getInt(cursor.getColumnIndex(Media.ALBUM_ID)));
 				in = new File(music.path);
 				if(in.length() >= kb * 1024L * 8){
 					array.add(music);
@@ -132,6 +140,7 @@ public class MyFragment extends Fragment{
 					content.put("title", music.title);
 					content.put("author", music.author);
 					content.put("path", music.path);
+					content.put("album_id", music.album_id);
 					db.insert("music_info", null, content);
 				}
 			}
@@ -142,22 +151,24 @@ public class MyFragment extends Fragment{
 			content.put("title", music.title);
 			content.put("author", music.author);
 			content.put("path", music.path);
+			content.put("album_id", music.album_id);
 			db.insert("music_info", null, content);
 			while(cursor.moveToNext()){
-				music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)));
+				music = new Music(cursor.getString(cursor.getColumnIndex(Media.TITLE)), cursor.getString(cursor.getColumnIndex(Media.ARTIST)), cursor.getString(cursor.getColumnIndex(Media.DATA)), cursor.getInt(cursor.getColumnIndex(Media.ALBUM_ID)));
 				array.add(music);
 				content = new ContentValues();
 				content.put("title", music.title);
 				content.put("author", music.author);
 				content.put("path", music.path);
+				content.put("album_id", music.album_id);
 				db.insert("music_info", null, content);
 			}
 		}
 		cursor.close();
-		CursorLoader cl2 = new CursorLoader(inflater.getContext(), Media.INTERNAL_CONTENT_URI, new String[]{Media.DATA, Media.ARTIST, Media.TITLE}, null, null, null);
+		CursorLoader cl2 = new CursorLoader(inflater.getContext(), Media.INTERNAL_CONTENT_URI, new String[]{Media.DATA, Media.ARTIST, Media.TITLE, Media.ALBUM_ID}, null, null, null);
 		Cursor cursor2 = cl2.loadInBackground();
 		cursor2.moveToFirst();
-		music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)));
+		music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)), cursor2.getInt(cursor2.getColumnIndex(Media.ALBUM_ID)));
 		if(kb != 0){
 			File in = new File(music.path);
 			if(in.length() >= kb * 1024L * 8){
@@ -166,10 +177,11 @@ public class MyFragment extends Fragment{
 				content.put("title", music.title);
 				content.put("author", music.author);
 				content.put("path", music.path);
+				content.put("album_id", music.album_id);
 				db.insert("music_info", null, content);
 			}
 			while(cursor2.moveToNext()){
-				music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)));
+				music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)), cursor2.getInt(cursor2.getColumnIndex(Media.ALBUM_ID)));
 				in = new File(music.path);
 				if(in.length() >= kb * 1024L * 8){
 					array.add(music);
@@ -177,6 +189,7 @@ public class MyFragment extends Fragment{
 					content.put("title", music.title);
 					content.put("author", music.author);
 					content.put("path", music.path);
+					content.put("album_id", music.album_id);
 					db.insert("music_info", null, content);
 				}
 			}
@@ -187,14 +200,16 @@ public class MyFragment extends Fragment{
 			content.put("title", music.title);
 			content.put("author", music.author);
 			content.put("path", music.path);
+			content.put("album_id", music.album_id);
 			db.insert("music_info", null, content);
 			while(cursor2.moveToNext()){
-				music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)));
+				music = new Music(cursor2.getString(cursor2.getColumnIndex(Media.TITLE)), cursor2.getString(cursor2.getColumnIndex(Media.ARTIST)), cursor2.getString(cursor2.getColumnIndex(Media.DATA)), cursor2.getInt(cursor2.getColumnIndex(Media.ALBUM_ID)));
 				array.add(music);
 				content = new ContentValues();
 				content.put("title", music.title);
 				content.put("author", music.author);
 				content.put("path", music.path);
+				content.put("album_id", music.album_id);
 				db.insert("music_info", null, content);
 			}
 		}
@@ -247,6 +262,10 @@ public class MyFragment extends Fragment{
 				e1.printStackTrace();
 			}
 		}
+		if(array.size() == 0){
+			View v = inflater.inflate(R.layout.nodata, null);
+			return v;
+		}
 		MyService.setArray(array);
 		System.out.println("get " + MyService.getLength() + " music");
 		Toast.makeText(inflater.getContext(), "获取了" + array.size() + "首歌曲", Toast.LENGTH_LONG).show();
@@ -283,7 +302,6 @@ public class MyFragment extends Fragment{
 							else{
 								handleMeg(MyService.PLAY,MyService.PLAY_NO_CHANGE);
 								bu.setImageResource(R.drawable.pause);
-								MainActivity.updateNoti(1);
 							}
 						}
 						else if(MyService.getNowPlay() == -1){
@@ -291,7 +309,6 @@ public class MyFragment extends Fragment{
 							handleMeg(MyService.PLAY, MyService.PLAY_CHANGE_RESOURCE);
 							previous = bu;
 							bu.setImageResource(R.drawable.pause);
-							MainActivity.updateNoti(1);
 							change = 1;
 						}
 						else{
@@ -306,12 +323,13 @@ public class MyFragment extends Fragment{
 								Toast.makeText(inflater.getContext(), "请等待", Toast.LENGTH_LONG).show();
 								return;
 							}
+							
 							MyService.setNowPlay(v.getId() - 100);
 							handleMeg(MyService.PLAY, MyService.PLAY_CHANGE_RESOURCE);
 							bu.setImageResource(R.drawable.pause);
 							previous = bu;
 							change = 1;
-							MainActivity.updateNoti(1);
+							
 						}
 					}
 				});
@@ -383,7 +401,6 @@ public class MyFragment extends Fragment{
 				if(previous != null){
 					handleMeg(MyService.PLAY, MyService.PLAY_NO_CHANGE);
 					previous.setImageResource(R.drawable.pause);
-					MainActivity.updateNoti(1);
 					return 1;
 				}else{
 					return 0;

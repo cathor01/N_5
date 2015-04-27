@@ -6,8 +6,13 @@ import java.util.Random;
 
 import android.app.Service;
 import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapRegionDecoder;
+import android.graphics.Rect;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.widget.ImageView;
@@ -33,6 +38,29 @@ public class MyService extends Service{
 	public static int getNowPlay(){
 		return nowPlay;
 	}
+	
+	private static void setNewBackGround(){
+		if(MainActivity.getInstance()!= null){
+			String mUriAlbums = "content://media/external/audio/albums";  
+			String[] projection = new String[] { "album_art" };  
+			Cursor cur = MainActivity.getInstance().getContentResolver().query(Uri.parse(mUriAlbums + "/" + array.get(nowPlay).album_id), projection, null, null, null);  
+			String album_art = null;  
+			if (cur.getCount() > 0 && cur.getColumnCount() > 0) {  
+				cur.moveToNext();
+				album_art = cur.getString(0);  
+			}  
+			cur.close();  
+			cur = null;
+			System.out.println("Image path------->" + album_art);
+			if(album_art == null || album_art.equals("")){
+				MainActivity.initBackGround();
+			}
+			else{
+				MainActivity.setBackGround(album_art);
+			}
+		}
+	}
+	
 	/***
 	 * 设置正在播放曲目id
 	 * */
@@ -88,6 +116,11 @@ public class MyService extends Service{
 		player.stop();
 	}
 	
+	public static void totalStop(){
+		setFlag(0);
+		player.stop();
+	}
+	
 	public static void pause(){
 		player.pause();
 		Controller.update();
@@ -109,6 +142,7 @@ public class MyService extends Service{
 			}
 		}
 		player.start();
+		setNewBackGround();
 		Controller.update();
 		return 1;
 	}
@@ -118,7 +152,9 @@ public class MyService extends Service{
 	public static void playover(){
 		switch(flag){
 		case 0:
-			MyFragment.previous.setImageResource(R.drawable.play);
+			if(MyFragment.previous != null){
+				MyFragment.previous.setImageResource(R.drawable.play);
+			}
 			MainActivity.updateNoti(2);
 			break;
 		case 1:
@@ -128,7 +164,9 @@ public class MyService extends Service{
 			play(MyService.PLAY_NO_CHANGE);
 			break;
 		case 3:
-			MyFragment.previous.setImageResource(R.drawable.play);
+			if(MyFragment.previous != null){
+				MyFragment.previous.setImageResource(R.drawable.play);
+			}
 			setNowPlay(new Random().nextInt(length));
 			MyService.play(MyService.PLAY_CHANGE_RESOURCE);
 			MyFragment.previous = (ImageView)MyFragment.list.getChildAt(MyService.getNowPlay()).findViewById(MyService.getNowPlay() + 100);
@@ -163,6 +201,7 @@ public class MyService extends Service{
 		MyFragment.previous = (ImageView)MyFragment.list.getChildAt(MyService.getNowPlay()).findViewById(MyService.getNowPlay() + 100);
 		MyFragment.previous.setImageResource(R.drawable.pause);
 		MyFragment.change = 1;
+		setNewBackGround();
 		MainActivity.updateNoti(1);
 	}
 	
@@ -178,6 +217,7 @@ public class MyService extends Service{
 		MyFragment.previous = (ImageView)MyFragment.list.getChildAt(MyService.getNowPlay()).findViewById(MyService.getNowPlay() + 100);
 		MyFragment.previous.setImageResource(R.drawable.pause);
 		MyFragment.change = 2;
+		setNewBackGround();
 		MainActivity.updateNoti(1);
 	}
 	/**

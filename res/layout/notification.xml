@@ -3,18 +3,29 @@
     android:layout_width="match_parent"
     android:layout_height="60dp"
     android:orientation="vertical" >
-
+	
+    <ImageView
+        android:id="@+id/album"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:layout_marginLeft="10dp"
+        android:scaleType="centerCrop"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/bg"
+        />
     <TextView
         android:id="@+id/ntitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="30dp"
+        android:layout_toRightOf="@id/album"
+        android:layout_marginLeft="5dp"
         android:layout_centerVertical="true"
-        android:maxWidth="180dp"
+        android:maxWidth="170dp"
         android:singleLine="true"
         android:text="aaaaaaaaaaaaaaaaaaa"
         android:textColor="#000000"
-        android:textSize="18sp" />
+        android:textSize="17sp" />
     <ImageView 
         android:id="@+id/npause"
         android:clickable="true"
@@ -25,6 +36,6 @@
         android:layout_alignParentRight="true"
         android:scaleX="0.75"
         android:scaleY="0.75"
-        android:layout_marginRight="30dp"/>
+        android:layout_marginRight="20dp"/>
 
 </RelativeLayout>

@@ -11,19 +11,27 @@
         android:layout_height="wrap_content"
         android:elevation="5dp"
         android:background="#66ccff"
-        
         style="@style/ToolBarStyle"
         android:minHeight="?android:attr/actionBarSize"
         android:layout_alignParentTop="true"/>
-
-	
+	<ImageView
+	    android:id="@+id/backImg"
+	    android:layout_width="match_parent"
+	    android:layout_height="431dp"
+	    android:layout_below="@id/tool"
+	    android:layout_margin="0dp"
+	    android:elevation="1dp"
+	    android:scaleType="centerCrop"
+	    android:src="@drawable/bg"
+	    android:layout_marginTop="2dp"
+	    />
 	<FrameLayout
 	    android:id="@+id/frag"
 	    android:layout_width="match_parent"
 	    android:layout_height="431dp"
 	    android:layout_below="@id/tool"
 	    android:layout_margin="0dp"
-	    android:elevation="1dp"
+	    android:elevation="2dp"
 	    android:layout_marginTop="2dp"
 	    />
 	<FrameLayout

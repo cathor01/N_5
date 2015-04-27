@@ -1,9 +1,11 @@
 package com.cathor.n_5;
 
 import java.io.File;
+import java.io.IOException;
 
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
+import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.app.Notification;
@@ -13,8 +15,14 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapRegionDecoder;
+import android.graphics.Matrix;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ClipDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -25,9 +33,12 @@ import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.Toolbar.OnMenuItemClickListener;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.RemoteViews;
 import android.widget.Toast;
@@ -35,6 +46,13 @@ import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity {
 	String filePath;
+	public static String data;
+	private static Activity activity;
+	private static Bitmap bitmap = null;
+	private static Bitmap nB = null;
+	private static int width;
+	private static int height;
+	private static ImageView background;
 	private static int counter = 1;
 	public static NotificationManager nm;
 	private final static int FILE_SELECT = 101;
@@ -45,8 +63,11 @@ public class MainActivity extends ActionBarActivity {
 	private static FragmentManager fm;
 	private static MyFragment fragment;
 	private static Controller control;
-	Toolbar toolbar;
+	private static Toolbar toolbar;
 	private static Notification notifi;
+	public static Activity getInstance(){
+		return activity;
+	}
 	/**
 	 * 推送Notification
 	 * （尚未完成）
@@ -98,7 +119,7 @@ public class MainActivity extends ActionBarActivity {
      * 
      * */
     
-	Handler handler = new Handler(){
+	static Handler handler = new Handler(){
 
 		@Override
 		public void handleMessage(Message msg) {
@@ -134,8 +155,48 @@ public class MainActivity extends ActionBarActivity {
 				ft1.replace(R.id.frag, fragment, "frag");
 				ft1.commit();
 				break;
+			case 104:
+				data = msg.getData().getString("backImg");
+				Thread thread = new Thread(new Runnable() {
+					
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						
+						BitmapRegionDecoder bd;
+						try {
+							bd = BitmapRegionDecoder.newInstance(data, true);
+							int left = 0;
+							int right = bd.getWidth();
+							int top = 0;
+							int bottom = bd.getHeight();
+							if(bd.getWidth() > 4096){
+								left = bd.getWidth() / 2 - 2048;
+								right = bd.getHeight() / 2 + 2048;
+							}
+							if(bd.getHeight() > 4096){
+								top = bd.getHeight() / 2 - 2048;
+								bottom = bd.getHeight() / 2 + 2048;
+							}
+							bitmap = bd.decodeRegion(new Rect(left, top, right, bottom), null);
+							//nB = zoomBitmap(bitmap);
+							handler.sendEmptyMessage(202);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				});
+				thread.start();
+				break;
 			case 201:
 				toolbar.getMenu().findItem(R.id.refresh).setVisible(true); //当音乐列表界面出现后方可刷新
+				toolbar.getMenu().findItem(R.id.change).setVisible(false);
+				break;
+			case 202:
+				//remote.setImageViewBitmap(R.id.album, nB);
+				updateNoti(1);
+				background.setImageBitmap(bitmap);
 				break;
 			}
 		}
@@ -146,24 +207,28 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
     	//getActionBar().hide();
-    	
     	scale = MainActivity.this.getResources().getDisplayMetrics().density;
     	service = new Intent(this, MyService.class); //音乐服务
     	startService(service);
+    	activity = this;
     	fm = getFragmentManager();
     	if(fragment == null){
     		fragment = new MyFragment(); //手动单例。。。。。。
     	}
+    	WindowManager wm = (WindowManager)getSystemService(Context.WINDOW_SERVICE);
+    	Point size = new Point();
+    	wm.getDefaultDisplay().getSize(size);
+    	width = size.x;
     	nm = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE); //通知栏，，，，做的还有问题
     	va = ValueAnimator.ofFloat(0f, 1f); //某个蛋疼功能
         va.setDuration(1000);
-    	getWindow().setBackgroundDrawableResource(R.drawable.bg);
         super.onCreate(savedInstanceState);
         LayoutInflater inflater = this.getLayoutInflater();
         final RelativeLayout main = (RelativeLayout)inflater.inflate(R.layout.activity_main, null);
+        background = (ImageView)main.findViewById(R.id.backImg);
+        height = background.getHeight();
         toolbar = (Toolbar)main.findViewById(R.id.tool); //Toolbar android.support.v7.Toolbar 使用
         //toolbar.getMenu().getItem(3).setVisible(false);
-        
         toolbar.setTitle("N_5");
         toolbar.setSubtitle("music player");
         toolbar.setBackgroundColor(0xff66ccff);
@@ -174,7 +239,7 @@ public class MainActivity extends ActionBarActivity {
         notifi = new Notification(R.drawable.ic_launcher, "开始音乐", System.currentTimeMillis());
     	notifi.flags = Notification.FLAG_NO_CLEAR;
     	RelativeLayout notiV = (RelativeLayout)inflater.inflate(R.layout.notification, null);
-    	registerHeadsetPlugReceiver();
+    	//registerHeadsetPlugReceiver();
         remote =  new RemoteViews(getPackageName(), R.layout.notification);
     	notifi.contentView = remote;
     	remote.setTextViewText(R.id.ntitle, "No Media");
@@ -211,6 +276,9 @@ public class MainActivity extends ActionBarActivity {
 							android.app.Fragment f = fm.findFragmentByTag("frag"); //加载MyFragment到中间的FrameLayout中
 							if(f != null){
 								ft.remove(f);
+							}
+							if(fragment == null){
+								fragment = new MyFragment();
 							}
 							ft.replace(R.id.frag, fragment, "frag");
 							ft.commit();
@@ -256,13 +324,32 @@ public class MainActivity extends ActionBarActivity {
 			if(resultCode == RESULT_OK){
 				Uri uri = data.getData();
 				filePath = FileUtils.getPath(this, uri);
-				Drawable draw = Drawable.createFromPath(filePath);
-				getWindow().setBackgroundDrawable(draw);
+				setBackGround(filePath);
 			}
 		}
 	}
+    /**
+     * 设置背景图片
+     * @param path 图片路径
+     * 
+     * */
     
+    public static void setBackGround(String path){
+    	Message msg = new Message();
+    	Bundle data = new Bundle();
+    	data.putString("backImg", path);
+    	msg.setData(data);
+    	msg.what = 104;
+    	handler.sendMessage(msg);
+    }
 
+    public static void initBackGround(){
+    	background.setImageResource(R.drawable.bg);
+    	//remote.setImageViewResource(R.id.album, R.drawable.bg);
+    	updateNoti(1);
+    	nB = null;
+    	bitmap = null;
+	}
 
 	@Override
 	protected void onRestart() {
@@ -288,6 +375,21 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
     
+    private static int getPx(int dp) {
+		// TODO Auto-generated method stub
+		return (int)(dp * scale + 0.5f);
+	}
+    
+    private static Bitmap zoomBitmap(Bitmap bitmap){
+    	Matrix matrix = new Matrix();
+    	float width = bitmap.getWidth();
+    	float height = bitmap.getHeight();
+    	float scaleX = getPx(70) / width;
+    	float scaleY = getPx(70) / height;
+    	Bitmap newB = Bitmap.createBitmap(bitmap, 0, 0, (int)width, (int)height, matrix, true);
+    	return newB;
+    }
+    
     /**
      * 解析Uri的类
      * 通过调用其静态方法实现
@@ -298,7 +400,7 @@ public class MainActivity extends ActionBarActivity {
     	 * 解析Uri
     	 * @author 瑞凯
     	 * @param context 调用的Context
-    	 * @param uri 需要解析的Uri (仅允许Audio)
+    	 * @param uri 需要解析的Uri (仅允许Image)
     	 * @return 解析后的Path
     	 * 
     	 * */
