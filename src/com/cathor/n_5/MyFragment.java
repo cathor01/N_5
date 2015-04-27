@@ -40,6 +40,9 @@ public class MyFragment extends Fragment{
 	public static ListView list;
 	public static int change = 0;
 	private static Intent intent;
+	/**
+	 * 内部类，包含title，author，path
+	 * */
 	static class Music{
 		String title;
 		String author;
@@ -51,11 +54,23 @@ public class MyFragment extends Fragment{
 		}
 	}
 	
+	/***
+	 * 向Service发送具体的Message，现状态只可发送播放请求
+	 * @param name 请求的名字
+	 * @param value 具体值
+	 * 
+	 * */
+	
 	private static void handleMeg(String name, String value){
 		intent = new Intent(inflater.getContext(), MyService.class);
 		intent.putExtra(name, value);
 		inflater.getContext().startService(intent);
 	}
+	
+	/**
+	 * 将dp转化为px
+	 * 
+	 * */
 	
 	private int getPx(int dp) {
 		// TODO Auto-generated method stub
@@ -74,6 +89,15 @@ public class MyFragment extends Fragment{
 		}
 		return array;
 	}
+	
+	/**
+	 * 调用系统数据库获取Audio(Slow)，并将获取到的数据存储到软件的数据库中
+	 * @param array 需要写入的ArrayList<Music>
+	 * @param inflater 调用的inflater
+	 * @param kb 过滤多少kb以下的内容(用户控制过滤尚未实现，接下来会做)
+	 * @param db 写入的SQLiteDatabase
+	 * @return 写入数据后的array
+	 * */
 	
 	private static ArrayList<MyFragment.Music> loadFromSystem(ArrayList<MyFragment.Music> array, LayoutInflater inflate, int kb, SQLiteDatabase db) throws FileNotFoundException{
 		inflater = inflate;
@@ -178,6 +202,10 @@ public class MyFragment extends Fragment{
 		return array;
 	}
 	
+	/**
+	 * 将数据库文件内容清空
+	 * */
+	
 	public static void dropData(){
 		File f = new File(inflater.getContext().getFilesDir() + "/musicdata/data.db3");
 		if(f.exists()){
@@ -239,7 +267,7 @@ public class MyFragment extends Fragment{
 				author.setText(MyService.getItemAt(position).author);
 				button.setClickable(true);
 				final LayoutParams params = button.getLayoutParams(); 
-				button.setOnClickListener(new View.OnClickListener () {
+				button.setOnClickListener(new View.OnClickListener () {//设置每个列表后面的播放功能实现
 					
 					@Override
 					public void onClick(View v) {
@@ -314,12 +342,11 @@ public class MyFragment extends Fragment{
 		re.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, getPx(height)* array.size()));
 		return scroll;
 	}
-	public static void test(){
-		ImageView test = (ImageView)list.getChildAt(3 + list.getFirstVisiblePosition()).findViewById(3 + list.getFirstVisiblePosition() + 100);
-		test.setImageResource(R.drawable.pause);
-	}
 	
-	
+	/***
+	 * 暂停当前音乐(不管是否正在播放)
+	 * 
+	 * */	
 	public static void pauseMusic(){
 		if(MyService.getNowPlay() != -1){
 			try{
@@ -336,6 +363,11 @@ public class MyFragment extends Fragment{
 			}
 		}
 	}
+	
+	/**
+	 * Controller按钮点击响应
+	 * 
+	 * */
 	
 	public static int clickMenu(){
 		try{
@@ -369,6 +401,4 @@ public class MyFragment extends Fragment{
 			return 0;
 		}
 	}
-	
-	
 }

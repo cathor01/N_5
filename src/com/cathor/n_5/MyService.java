@@ -14,37 +14,50 @@ import android.widget.ImageView;
 
 public class MyService extends Service{
 	
-	public final static String SET_NOW = "setnow";
+	public final static String SET_NOW = "setnow"; 
 	public final static String STOP = "stop";
 	public final static String PAUSE = "pause";
-	public final static String PLAY = "play";
+	public final static String PLAY = "play"; //播放的标识
 	public final static String FLAG = "flag";
 	public final static String MOVE_TO_NEXT = "moveToNext";
 	private static MediaPlayer player= new MediaPlayer();
-	private static int flag = 0;
-	public final static String PLAY_CHANGE_RESOURCE = "chan";
-	public final static String PLAY_NO_CHANGE = "noc";
-	private static ArrayList<MyFragment.Music> array;
-	private static int nowPlay = -1;
-	private static int length = 0;
+	private static int flag = 0; //播放模式
+	public final static String PLAY_CHANGE_RESOURCE = "chan"; //改变了Resource的播放tFlag
+	public final static String PLAY_NO_CHANGE = "noc"; //未改变Resource的播放tFlag
+	private static ArrayList<MyFragment.Music> array; //播放列表
+	private static int nowPlay = -1; //正在播放曲目(初始为0)
+	private static int length = 0; //array长度
+	/**
+	 * 获取正在播放曲目Id
+	 * */	
 	public static int getNowPlay(){
 		return nowPlay;
 	}
-	
+	/***
+	 * 设置正在播放曲目id
+	 * */
 	public static void setNowPlay(int newNow){
 		nowPlay = newNow;
 		System.out.println("nowPlay------>" + nowPlay);
 	}
-	
+	/**
+	 * 设置array，并更新length
+	 * 
+	 * */
 	public static void setArray(ArrayList<MyFragment.Music> tArray){
 		array = tArray;
 		length = array.size();
 	}
 	
+	/**
+	 * 获取在position位置的Music类型
+	 * */
 	public static MyFragment.Music getItemAt(int position){
 		return array.get(position);
 	}
-	
+	/***
+	 * 获取数组长度
+	 * */
 	public static int getLength(){
 		return length;
 	}
@@ -64,7 +77,9 @@ public class MyService extends Service{
 		});
 		System.out.println("Create the Srevice");
 	}
-	
+	/**
+	 * 获取当前播放状态
+	 * */
 	public static boolean getPlayStatewioutThrow(){
 		return player.isPlaying();
 	}
@@ -77,7 +92,10 @@ public class MyService extends Service{
 		player.pause();
 		Controller.update();
 	}
-	
+	/***
+	 * 播放
+	 * @param tflag 播放的模式
+	 * */
 	private static int play(String tflag){
 		if(tflag.equals(PLAY_CHANGE_RESOURCE)){
 			player.reset();
@@ -94,7 +112,9 @@ public class MyService extends Service{
 		Controller.update();
 		return 1;
 	}
-	
+	/**
+	 * 播放完成后调用
+	 * */
 	public static void playover(){
 		switch(flag){
 		case 0:
@@ -119,15 +139,21 @@ public class MyService extends Service{
 		}
 		Controller.update();
 	}
-	
+	/**
+	 * 设置播放模式
+	 * */
 	public static void setFlag(int tflag){
 		flag = tflag;
 	}
-	
+	/**
+	 * 获取播放模式
+	 * */
 	public static int getFlag(){
 		return flag;
 	}
-	
+	/***
+	 * 下一曲
+	 * */
 	public static void moveToNext(){
 		MyFragment.previous.setImageResource(R.drawable.play);
 		System.out.println("nowPlay -p ------->" + MyService.getNowPlay());
@@ -139,6 +165,10 @@ public class MyService extends Service{
 		MyFragment.change = 1;
 		MainActivity.updateNoti(1);
 	}
+	
+	/**
+	 * 上一曲
+	 * */
 	public static void moveToLast(){
 		MyFragment.previous.setImageResource(R.drawable.play);
 		System.out.println("nowPlay -p ------->" + MyService.getNowPlay());
@@ -150,7 +180,9 @@ public class MyService extends Service{
 		MyFragment.change = 2;
 		MainActivity.updateNoti(1);
 	}
-
+	/**
+	 * 解析intent数据并执行操作
+	 * */
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		// TODO Auto-generated method stub
@@ -162,15 +194,15 @@ public class MyService extends Service{
 					System.out.println("key------->"+key);
 					System.out.println("value----->"+value);
 					switch(key){
-					case SET_NOW:
+					case SET_NOW://未使用
 						setNowPlay(Integer.parseInt(value));
 						System.out.println("execute setNow");
 						break;
-					case STOP:
+					case STOP://未使用
 						stop();
 						System.out.println("execute stop");
 						break;
-					case PAUSE:
+					case PAUSE://未使用
 						pause();
 						System.out.println("execute pause");
 						break;
@@ -178,11 +210,11 @@ public class MyService extends Service{
 						play(value);
 						System.out.println("execute play");
 						break;
-					case MOVE_TO_NEXT:
+					case MOVE_TO_NEXT: //未使用
 						moveToNext();
 						System.out.println("execute moveToNext");
 						break;
-					case FLAG:
+					case FLAG: //未使用
 						setFlag(Integer.parseInt(value));
 						System.out.println("execute setFlag");
 						break;

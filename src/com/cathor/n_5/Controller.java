@@ -27,6 +27,10 @@ public class Controller extends Fragment {
 	private static RelativeLayout.LayoutParams initParams;
 	private static ValueAnimator vaGo = ValueAnimator.ofFloat(1f, 0f);
 	private static ValueAnimator vaCome = ValueAnimator.ofFloat(0f, 1f);
+	/**
+	 * 将Controller的两个标题给打包
+	 * */
+	
 	private static class MusicInfo{
 		RelativeLayout relative;
 		TextView title;
@@ -37,33 +41,56 @@ public class Controller extends Fragment {
 			this.title = title;
 			this.author = author;
 		}
+		/**
+		 * 初始化为不可见状态
+		 * */
 		private void init(){
 			this.relative.setLayoutParams(initParams);
 			this.relative.setVisibility(View.INVISIBLE);
 			this.relative.setAlpha(0);
 		}
+		/**
+		 * 切换动画（上一曲）
+		 * @param titleV 上一曲的title
+		 * @param authorV 上一曲的author
+		 * */
+		
 		public static void go(String titleV, String authorV){
 			to.title.setText(titleV);
 			to.author.setText(authorV);
 			vaGo.start();
 		}
+		
+		/**
+		 * 切换动画（下一曲）
+		 * @param titleV 下一曲的title
+		 * @param authorV 下一曲的author
+		 * */
 		public static void come(String titleV, String authorV){
 			to.title.setText(titleV);
 			to.author.setText(authorV);
 			vaCome.start();
 		}
 	}
-	
+	/***
+	 * 所有控件初始化
+	 * */
 	public static void init(){
 		from.title.setText("列表中选择播放");
 		from.author.setText("");
 		play.setImageResource(R.drawable.play_w);
 	}
-	
+	/**
+	 * dp转px
+	 * */
 	private int getPx(int dp) {
 		// TODO Auto-generated method stub
 		return (int)(dp * MainActivity.scale + 0.5f);
 	}
+	
+	/**
+	 * 更新所有控件
+	 * */
 	
 	public static void update(){
 		if(MyService.getNowPlay() != -1){
@@ -109,7 +136,9 @@ public class Controller extends Fragment {
 			}
 		}
 	}
-	
+	/***
+	 * 点击播放模式后toast
+	 * */
 	private void toastInfo(){
 		switch(MyService.getFlag()){
 		case 0:

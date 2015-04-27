@@ -47,6 +47,13 @@ public class MainActivity extends ActionBarActivity {
 	private static Controller control;
 	Toolbar toolbar;
 	private static Notification notifi;
+	/**
+	 * 推送Notification
+	 * （尚未完成）
+	 * @author 瑞凯
+	 * @param flag 播放或否
+	 * 
+	 * */
 	public static void updateNoti(int flag){
 		if(MyService.getNowPlay() != -1){
 			remote.setTextViewText(R.id.ntitle,MyService.getItemAt(MyService.getNowPlay()).title);
@@ -65,6 +72,11 @@ public class MainActivity extends ActionBarActivity {
 		}
 	}
 	
+	/***
+	 * 耳机拔出状态监听
+	 * 
+	 * */
+	
 	private void registerHeadsetPlugReceiver() {    
         IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);    
         registerReceiver(headsetPlugReceiver, intentFilter);   
@@ -81,6 +93,11 @@ public class MainActivity extends ActionBarActivity {
         }  
     };  
 	
+    /**
+     * Handler处理
+     * 
+     * */
+    
 	Handler handler = new Handler(){
 
 		@Override
@@ -118,7 +135,7 @@ public class MainActivity extends ActionBarActivity {
 				ft1.commit();
 				break;
 			case 201:
-				toolbar.getMenu().findItem(R.id.refresh).setVisible(true);
+				toolbar.getMenu().findItem(R.id.refresh).setVisible(true); //当音乐列表界面出现后方可刷新
 				break;
 			}
 		}
@@ -131,20 +148,20 @@ public class MainActivity extends ActionBarActivity {
     	//getActionBar().hide();
     	
     	scale = MainActivity.this.getResources().getDisplayMetrics().density;
-    	service = new Intent(this, MyService.class);
+    	service = new Intent(this, MyService.class); //音乐服务
     	startService(service);
     	fm = getFragmentManager();
     	if(fragment == null){
-    		fragment = new MyFragment();
+    		fragment = new MyFragment(); //手动单例。。。。。。
     	}
-    	nm = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-    	va = ValueAnimator.ofFloat(0f, 1f);
+    	nm = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE); //通知栏，，，，做的还有问题
+    	va = ValueAnimator.ofFloat(0f, 1f); //某个蛋疼功能
         va.setDuration(1000);
     	getWindow().setBackgroundDrawableResource(R.drawable.bg);
         super.onCreate(savedInstanceState);
         LayoutInflater inflater = this.getLayoutInflater();
         final RelativeLayout main = (RelativeLayout)inflater.inflate(R.layout.activity_main, null);
-        toolbar = (Toolbar)main.findViewById(R.id.tool);
+        toolbar = (Toolbar)main.findViewById(R.id.tool); //Toolbar android.support.v7.Toolbar 使用
         //toolbar.getMenu().getItem(3).setVisible(false);
         
         toolbar.setTitle("N_5");
@@ -191,7 +208,7 @@ public class MainActivity extends ActionBarActivity {
 						public void run() {
 							// TODO Auto-generated method stub
 							FragmentTransaction ft = fm.beginTransaction();
-							android.app.Fragment f = fm.findFragmentByTag("frag");
+							android.app.Fragment f = fm.findFragmentByTag("frag"); //加载MyFragment到中间的FrameLayout中
 							if(f != null){
 								ft.remove(f);
 							}
@@ -207,7 +224,7 @@ public class MainActivity extends ActionBarActivity {
 				return false;
 			}
 		});
-        if(control == null){
+        if(control == null){ //手动单例。。。。。。
         	control = new Controller();
         }
         FragmentTransaction ftt = fm.beginTransaction();
@@ -270,7 +287,22 @@ public class MainActivity extends ActionBarActivity {
         int id = item.getItemId();
         return super.onOptionsItemSelected(item);
     }
+    
+    /**
+     * 解析Uri的类
+     * 通过调用其静态方法实现
+     * 
+     * */
     public static class FileUtils {
+    	/***
+    	 * 解析Uri
+    	 * @author 瑞凯
+    	 * @param context 调用的Context
+    	 * @param uri 需要解析的Uri (仅允许Audio)
+    	 * @return 解析后的Path
+    	 * 
+    	 * */
+    	
 	    public static String getPath(Context context, Uri uri) {
 	    	File fi = new File(uri.getPath());
 	    	
