@@ -9,7 +9,6 @@ import android.app.FragmentTransaction;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -18,11 +17,10 @@ import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.media.MediaPlayer.OnCompletionListener;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.IBinder;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
@@ -47,6 +45,7 @@ public class MainActivity extends ActionBarActivity {
 	private static FragmentManager fm;
 	private static MyFragment fragment;
 	private static Controller control;
+	Toolbar toolbar;
 	private static Notification notifi;
 	public static void updateNoti(int flag){
 		if(MyService.getNowPlay() != -1){
@@ -59,7 +58,10 @@ public class MainActivity extends ActionBarActivity {
 				remote.setImageViewResource(R.id.npause, R.drawable.play);
 				nm.cancel(111);
 			}
-			
+		}
+		else{
+			remote.setImageViewResource(R.id.npause, R.drawable.play);
+			nm.cancel(111);
 		}
 	}
 	
@@ -78,25 +80,56 @@ public class MainActivity extends ActionBarActivity {
             }  
         }  
     };  
-    
-    ServiceConnection conn = new ServiceConnection() {
-		
+	
+	Handler handler = new Handler(){
+
 		@Override
-		public void onServiceDisconnected(ComponentName name) {
+		public void handleMessage(Message msg) {
 			// TODO Auto-generated method stub
-			bindService(service, conn, BIND_AUTO_CREATE);
+			super.handleMessage(msg);
+			switch(msg.what){
+			case 101:
+				FragmentTransaction ft = fm.beginTransaction();
+				android.app.Fragment f = fm.findFragmentByTag("frag");
+				if(f != null){
+					ft.remove(f);
+				}
+				ft.commit();
+				try{
+					MyService.stop();
+				}
+				catch(IllegalStateException e){
+					e.printStackTrace();
+				}
+				MyService.setNowPlay(-1);
+				Controller.init();
+				updateNoti(11);
+				MyFragment.dropData();
+				handler.sendEmptyMessage(102);
+				break;
+			case 102:
+				fragment = new MyFragment();
+				FragmentTransaction ft1 = fm.beginTransaction();
+				android.app.Fragment f1 = fm.findFragmentByTag("frag");
+				if(f1 != null){
+					ft1.remove(f1);
+				}
+				ft1.replace(R.id.frag, fragment, "frag");
+				ft1.commit();
+				break;
+			case 201:
+				toolbar.getMenu().findItem(R.id.refresh).setVisible(true);
+				break;
+			}
 		}
 		
-		@Override
-		public void onServiceConnected(ComponentName name, IBinder service) {
-			// TODO Auto-generated method stub
-			
-		}
 	};
+	
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
     	//getActionBar().hide();
+    	
     	scale = MainActivity.this.getResources().getDisplayMetrics().density;
     	service = new Intent(this, MyService.class);
     	startService(service);
@@ -111,7 +144,9 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         LayoutInflater inflater = this.getLayoutInflater();
         final RelativeLayout main = (RelativeLayout)inflater.inflate(R.layout.activity_main, null);
-        Toolbar toolbar = (Toolbar)main.findViewById(R.id.tool);
+        toolbar = (Toolbar)main.findViewById(R.id.tool);
+        //toolbar.getMenu().getItem(3).setVisible(false);
+        
         toolbar.setTitle("N_5");
         toolbar.setSubtitle("music player");
         toolbar.setBackgroundColor(0xff66ccff);
@@ -162,23 +197,26 @@ public class MainActivity extends ActionBarActivity {
 							}
 							ft.replace(R.id.frag, fragment, "frag");
 							ft.commit();
+							handler.sendEmptyMessage(201);
 						}
 					}).start();
 		        	return false;
+		        case R.id.refresh:
+		        	handler.sendEmptyMessage(101);
 		        }
 				return false;
 			}
 		});
         if(control == null){
         	control = new Controller();
-        	FragmentTransaction ftt = fm.beginTransaction();
-        	android.app.Fragment f = fm.findFragmentByTag("cont");
-        	if(f != null){
-        		ftt.remove(f);
-        	}
-            ftt.replace(R.id.controller, control, "cont");
-            ftt.commit();
         }
+        FragmentTransaction ftt = fm.beginTransaction();
+    	android.app.Fragment f = fm.findFragmentByTag("cont");
+    	if(f != null){
+    		ftt.remove(f);
+    	}
+        ftt.replace(R.id.controller, control, "cont");
+        ftt.commit();
         AnimatorUpdateListener listener = new AnimatorUpdateListener() {
 			
 			@Override

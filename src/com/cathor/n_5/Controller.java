@@ -54,6 +54,12 @@ public class Controller extends Fragment {
 		}
 	}
 	
+	public static void init(){
+		from.title.setText("列表中选择播放");
+		from.author.setText("");
+		play.setImageResource(R.drawable.play_w);
+	}
+	
 	private int getPx(int dp) {
 		// TODO Auto-generated method stub
 		return (int)(dp * MainActivity.scale + 0.5f);
@@ -107,16 +113,16 @@ public class Controller extends Fragment {
 	private void toastInfo(){
 		switch(MyService.getFlag()){
 		case 0:
-			Toast.makeText(inflater.getContext(), "单曲播放", 500).show();
+			Toast.makeText(inflater.getContext(), "单曲播放", Toast.LENGTH_SHORT).show();
 			break;
 		case 1:
-			Toast.makeText(inflater.getContext(), "全部循环", 500).show();
+			Toast.makeText(inflater.getContext(), "全部循环", Toast.LENGTH_SHORT).show();
 			break;
 		case 2:
-			Toast.makeText(inflater.getContext(), "单曲循环", 500).show();
+			Toast.makeText(inflater.getContext(), "单曲循环", Toast.LENGTH_SHORT).show();
 			break;
 		case 3:
-			Toast.makeText(inflater.getContext(), "随机播放", 500).show();
+			Toast.makeText(inflater.getContext(), "随机播放", Toast.LENGTH_SHORT).show();
 		}
 	}
 	
@@ -238,20 +244,24 @@ public class Controller extends Fragment {
 		RelativeLayout musicInfo = (RelativeLayout)relative.findViewById(R.id.name);
 		OnTouchListener listener = new OnTouchListener() {
 			float pY;
+			float pX;
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
 				// TODO Auto-generated method stub
-				if(event.getAction() == MotionEvent.ACTION_DOWN){
-					pY = event.getY();
-				}
-				if(event.getAction() == MotionEvent.ACTION_UP){
-					if(event.getY() >= pY + getPx(20)){
-						MyService.moveToLast();
+				if(MyService.getNowPlay() != -1){
+					if(event.getAction() == MotionEvent.ACTION_DOWN){
+						pY = event.getY();
+						pX = event.getX();
 					}
-					if(event.getY() <= pY - getPx(20)){
-						MyService.moveToNext();
+					if(event.getAction() == MotionEvent.ACTION_UP){
+						if(event.getY() >= pY + getPx(20) && (event.getX() - pX <= event.getY() - pY && pX - event.getX() <= event.getY() - pY)){
+							MyService.moveToLast();
+						}
+						if(event.getY() <= pY - getPx(20) && (event.getX() - pX <= pY - event.getY() && pX - event.getX() <= pY - event.getY())){
+							MyService.moveToNext();
+						}
+						update();
 					}
-					update();
 				}
 				return false;
 			}
@@ -287,9 +297,6 @@ public class Controller extends Fragment {
 				int t = MyFragment.clickMenu();
 				if(t == 0){
 					Toast.makeText(inflater.getContext(), "尚未选择歌曲", Toast.LENGTH_SHORT).show();
-				}
-				else{
-					update();
 				}
 			}
 		});

@@ -53,6 +53,7 @@ public class MyService extends Service{
 	public void onCreate() {
 		// TODO Auto-generated method stub
 		super.onCreate();
+		
 		player.setOnCompletionListener(new OnCompletionListener() {
 			
 			@Override
@@ -74,6 +75,7 @@ public class MyService extends Service{
 	
 	public static void pause(){
 		player.pause();
+		Controller.update();
 	}
 	
 	private static int play(String tflag){
@@ -140,7 +142,7 @@ public class MyService extends Service{
 	public static void moveToLast(){
 		MyFragment.previous.setImageResource(R.drawable.play);
 		System.out.println("nowPlay -p ------->" + MyService.getNowPlay());
-		MyService.setNowPlay(((MyService.getNowPlay() - 1 < 0)? length - 1: MyService.getNowPlay() - - 1) % length);
+		MyService.setNowPlay((MyService.getNowPlay() - 1 + length) % length);
 		System.out.println("nowPlay -l ------->" + MyService.getNowPlay());
 		MyService.play(MyService.PLAY_CHANGE_RESOURCE);
 		MyFragment.previous = (ImageView)MyFragment.list.getChildAt(MyService.getNowPlay()).findViewById(MyService.getNowPlay() + 100);

@@ -2,6 +2,7 @@ package com.cathor.n_5;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -15,6 +16,7 @@ import android.database.sqlite.SQLiteCantOpenDatabaseException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.os.Bundle;
+import android.os.Looper;
 import android.provider.MediaStore.Audio.Media;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,13 +34,13 @@ import android.widget.Toast;
 public class MyFragment extends Fragment{
 	public static int height = 55;
 	public static ImageView previous;
-	private SQLiteDatabase db;
+	private static SQLiteDatabase db;
 	private static LayoutInflater inflater;
 	private static BaseAdapter adapter;
 	public static ListView list;
 	public static int change = 0;
 	private static Intent intent;
-	class Music{
+	static class Music{
 		String title;
 		String author;
 		String path;
@@ -73,7 +75,7 @@ public class MyFragment extends Fragment{
 		return array;
 	}
 	
-	private ArrayList<MyFragment.Music> loadFromSystem(ArrayList<MyFragment.Music> array, LayoutInflater inflate, int kb, SQLiteDatabase db) throws FileNotFoundException{
+	private static ArrayList<MyFragment.Music> loadFromSystem(ArrayList<MyFragment.Music> array, LayoutInflater inflate, int kb, SQLiteDatabase db) throws FileNotFoundException{
 		inflater = inflate;
 		try{
 			db.execSQL("create table music_info(_id integer primary key autoincrement, title, author, path)");
@@ -176,6 +178,15 @@ public class MyFragment extends Fragment{
 		return array;
 	}
 	
+	public static void dropData(){
+		File f = new File(inflater.getContext().getFilesDir() + "/musicdata/data.db3");
+		if(f.exists()){
+			f.delete();
+		}
+		db = null;
+		System.out.println("File--------->" + f.exists());
+	}
+	
 	@SuppressLint("SdCardPath") @Override
 	public View onCreateView(final LayoutInflater inflate, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -190,7 +201,7 @@ public class MyFragment extends Fragment{
 		System.out.println("Create cursor");
 		ArrayList<Music> array = new ArrayList<MyFragment.Music>();
 		try{
-			db = SQLiteDatabase.openDatabase(inflater.getContext().getFilesDir() + "/musicdata/data.db3",  null, SQLiteDatabase.OPEN_READWRITE);
+			if(db==null){db = SQLiteDatabase.openDatabase(inflater.getContext().getFilesDir() + "/musicdata/data.db3",  null, SQLiteDatabase.OPEN_READWRITE);}
 			array = loadFromDatabase(db);
 		}
 		catch(SQLiteCantOpenDatabaseException e){
@@ -258,7 +269,7 @@ public class MyFragment extends Fragment{
 						else{
 							try{
 								if(MyService.getPlayStatewioutThrow()){
-									MyService.pause();
+									MyService.stop();
 									previous.setImageResource(R.drawable.play);
 									MainActivity.updateNoti(2);
 								}
